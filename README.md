@@ -14,6 +14,9 @@ M5Stack AtomS3R + Atomic EchoBase で動作する、OpenAI Realtime API を使�
 ## ビルド・書き込み
 
 ```bash
+# サブモジュールの取得
+git submodule update --init --recursive
+
 # 環境変数を設定
 export WIFI_SSID="your_ssid"
 export WIFI_PASSWORD="your_password"
