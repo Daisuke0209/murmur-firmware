@@ -1,48 +1,34 @@
-# Open RealtimeAPI Embedded SDK
+# Murmur Firmware
 
-# Table of Contents
+M5Stack AtomS3R + Atomic EchoBase で動作する、OpenAI Realtime API を使った音声対話ファームウェアです。
 
-- [Docs](#docs)
-- [Installation](#installation)
-- [Usage](#usage)
+## 必要なデバイス
 
-## Platform/Device Support
+- [M5Stack AtomS3R](https://docs.m5stack.com/en/core/AtomS3R)
+- [M5Stack Atomic EchoBase](https://docs.m5stack.com/en/atom/Atomic%20EchoBase)
 
-This SDK has been developed tested on a `esp32s3` and `linux`. You don't need any physical hardware
-to run this SDK. You can use it from Linux directly.
+## 環境構築
 
-To use it on hardware purchase either of these microcontrollers. Others may work, but this is what
-has been developed against.
+[ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/get-started/) (v5.5) のインストールが必要です。
 
-* [Freenove ESP32-S3-WROOM](https://www.amazon.com/gp/product/B0BMQ8F7FN)
-* [Sonatino - ESP32-S3 Audio Development Board](https://www.amazon.com/gp/product/B0BVY8RJNP)
+## ビルド・書き込み
 
-You can get a ESP32S3 for much less money on eBay/AliExpress.
+```bash
+# 環境変数を設定
+export WIFI_SSID="your_ssid"
+export WIFI_PASSWORD="your_password"
+export OPENAI_API_KEY="sk-xxx"
 
-## Installation
+# ESP-IDF 環境を有効化
+. ~/esp/esp-idf/export.sh
 
-`protoc` must be in your path with `protobufc` installed.
+# ターゲット設定（初回のみ）
+idf.py set-target esp32s3
 
-Call `set-target` with the platform you are targetting. Today only `linux` and `esp32s3` are supported.
-* `idf.py set-target esp32s3`
+# ボード選択（初回のみ）
+# M5 AtomS3R を選択して保存
+idf.py menuconfig
 
-Configure device specific settings. None needed at this time
-* `idf.py menuconfig`
-
-Set your Wifi SSID + Password as env variables
-* `export WIFI_SSID=foo`
-* `export WIFI_PASSWORD=bar`
-* `export OPENAI_API_KEY=bing`
-
-Build
-* `idf.py build`
-
-If you built for `esp32s3` run the following to flash to the device
-* `sudo -E idf.py flash`
-
-If you built for `linux` you can run the binary directly
-* `./build/src.elf`
-
-See [build.yaml](.github/workflows/build.yaml) for a Docker command to do this all in one step.
-
-## Usage
+# ビルド＆書き込み
+idf.py flash monitor
+```
