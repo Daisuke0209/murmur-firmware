@@ -136,7 +136,7 @@ void oai_init_audio_capture() {
     return;
   }
 
-  es8311_voice_volume_set(es8311_handle, 80, NULL);
+  es8311_voice_volume_set(es8311_handle, 70, NULL);
   es8311_microphone_config(es8311_handle, false);
 
   i2s_config_t i2s_config = {
