@@ -18,6 +18,7 @@ extern "C" void app_main(void) {
 
   ESP_ERROR_CHECK(esp_event_loop_create_default());
   peer_init();
+  oai_init_display();
   oai_init_audio_capture();
   oai_init_audio_decoder();
   oai_wifi();
