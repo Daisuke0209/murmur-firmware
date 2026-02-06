@@ -5,6 +5,7 @@
 #include <opus.h>
 #include <string.h>
 
+#include "display.h"
 #include "main.h"
 
 #define USER_BUTTON GPIO_NUM_41
@@ -43,6 +44,7 @@ static void oai_onconnectionstatechange_task(PeerConnectionState state,
       state == PEER_CONNECTION_CLOSED) {
     ESP_LOGI(LOG_TAG, "WebRTC disconnected");
   } else if (state == PEER_CONNECTION_CONNECTED) {
+    oai_display_set_state(DISPLAY_STATE_CONNECTED);
 #if CONFIG_OPENAI_BOARD_ESP32_S3
     audio_task_stack = (StackType_t *)heap_caps_malloc(
         20000 * sizeof(StackType_t), MALLOC_CAP_SPIRAM);
@@ -121,6 +123,7 @@ void oai_webrtc() {
   peer_connection = NULL;
 
   ESP_LOGI(LOG_TAG, "WebRTC connection stopped");
+  oai_display_set_state(DISPLAY_STATE_DISCONNECTED);
 }
 
 static void IRAM_ATTR button_isr_handler(void *arg) {
