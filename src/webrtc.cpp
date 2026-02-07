@@ -163,6 +163,7 @@ void oai_webrtc_loop(void *user_data) {
     button_pressed = false;
 
     ESP_LOGI(LOG_TAG, "Reconnecting WebRTC...");
+    oai_display_set_state(DISPLAY_STATE_INITIALIZING);
     oai_webrtc();
   }
 }
