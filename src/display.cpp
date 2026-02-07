@@ -11,6 +11,10 @@
 
 #if CONFIG_OPENAI_BOARD_M5_ATOMS3R
 
+#include "images/icon_loading.h"
+#include "images/icon_connected.h"
+#include "images/icon_disconnected.h"
+
 // Backlight control via LP5562 (I2C)
 #define BL_I2C_PORT  I2C_NUM_0
 #define BL_I2C_SDA   GPIO_NUM_45
@@ -115,11 +119,9 @@ static void lcd_set_window(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) {
 static void lcd_fill_screen(uint16_t color) {
     lcd_set_window(0, 0, LCD_WIDTH - 1, LCD_HEIGHT - 1);
 
-    // Swap bytes for SPI (big endian)
     uint8_t color_hi = color >> 8;
     uint8_t color_lo = color & 0xFF;
 
-    // Send in chunks to avoid large buffer
     uint8_t line_buf[LCD_WIDTH * 2];
     for (int i = 0; i < LCD_WIDTH; i++) {
         line_buf[i * 2] = color_hi;
@@ -130,6 +132,34 @@ static void lcd_fill_screen(uint16_t color) {
     for (int y = 0; y < LCD_HEIGHT; y++) {
         spi_transaction_t t = {};
         t.length = LCD_WIDTH * 2 * 8;
+        t.tx_buffer = line_buf;
+        spi_device_transmit(spi_handle, &t);
+    }
+}
+
+// Draw image centered on screen (64x64 icon)
+static void lcd_draw_image(const uint16_t *image) {
+    // Fill background with white
+    lcd_fill_screen(0xFFFF);
+
+    // Calculate offset to center the icon
+    int x_offset = (LCD_WIDTH - ICON_WIDTH) / 2;   // 32
+    int y_offset = (LCD_HEIGHT - ICON_HEIGHT) / 2; // 32
+
+    // Draw the icon at center
+    lcd_set_window(x_offset, y_offset, x_offset + ICON_WIDTH - 1, y_offset + ICON_HEIGHT - 1);
+
+    uint8_t line_buf[ICON_WIDTH * 2];
+
+    gpio_set_level(LCD_PIN_DC, 1);
+    for (int y = 0; y < ICON_HEIGHT; y++) {
+        for (int x = 0; x < ICON_WIDTH; x++) {
+            uint16_t pixel = image[y * ICON_WIDTH + x];
+            line_buf[x * 2] = pixel >> 8;
+            line_buf[x * 2 + 1] = pixel & 0xFF;
+        }
+        spi_transaction_t t = {};
+        t.length = ICON_WIDTH * 2 * 8;
         t.tx_buffer = line_buf;
         spi_device_transmit(spi_handle, &t);
     }
@@ -198,22 +228,22 @@ void oai_init_display(void) {
 }
 
 void oai_display_set_state(DisplayState state) {
-    uint16_t color;
+    const uint16_t *image;
     switch (state) {
         case DISPLAY_STATE_INITIALIZING:
-            color = 0x001F;  // Blue (RGB565)
+            image = icon_loading;
             break;
         case DISPLAY_STATE_CONNECTED:
-            color = 0x07E0;  // Green (RGB565)
+            image = icon_connected;
             break;
         case DISPLAY_STATE_DISCONNECTED:
-            color = 0xF800;  // Red (RGB565)
+            image = icon_disconnected;
             break;
         default:
-            color = 0x0000;  // Black
+            image = icon_loading;
             break;
     }
-    lcd_fill_screen(color);
+    lcd_draw_image(image);
 }
 
 #else
