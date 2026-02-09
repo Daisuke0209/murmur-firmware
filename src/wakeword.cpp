@@ -11,15 +11,18 @@
 
 #include "esp_wn_iface.h"
 #include "esp_wn_models.h"
+#include "model_path.h"
 
-#define WAKEWORD_TASK_STACK_SIZE 8192
+#define WAKEWORD_TASK_STACK_SIZE 16384
 #define I2S_PORT I2S_NUM_1
 
+static srmodel_list_t *sr_models = NULL;
 static const esp_wn_iface_t *wakenet = NULL;
 static model_iface_data_t *model_data = NULL;
 static TaskHandle_t wakeword_task_handle = NULL;
 static volatile bool wakeword_running = false;
 static volatile bool wake_detected = false;
+static bool wakeword_initialized = false;
 
 static int16_t *audio_buffer = NULL;
 static int audio_chunksize = 0;
@@ -47,8 +50,6 @@ static void wakeword_task(void *arg) {
             wake_detected = true;
             ESP_LOGI(LOG_TAG, "Wake word detected!");
         }
-
-        vTaskDelay(pdMS_TO_TICKS(10));
     }
 
     ESP_LOGI(LOG_TAG, "Wake word detection task stopped");
@@ -57,17 +58,39 @@ static void wakeword_task(void *arg) {
 }
 
 int oai_init_wakeword(void) {
+    // Load models from SPIFFS partition
+    sr_models = esp_srmodel_init("model");
+    if (sr_models == NULL) {
+        ESP_LOGE(LOG_TAG, "Failed to load SR models from partition");
+        return -1;
+    }
+
+    // Find wake word model
+    char *model_name = esp_srmodel_filter(sr_models, ESP_WN_PREFIX, "hiesp");
+    if (model_name == NULL) {
+        ESP_LOGE(LOG_TAG, "Failed to find 'hiesp' wake word model");
+        esp_srmodel_deinit(sr_models);
+        sr_models = NULL;
+        return -1;
+    }
+
+    ESP_LOGI(LOG_TAG, "Found wake word model: %s", model_name);
+
     // Get WakeNet handle
-    wakenet = esp_wn_handle_from_name(WAKENET_MODEL_NAME);
+    wakenet = esp_wn_handle_from_name(model_name);
     if (wakenet == NULL) {
-        ESP_LOGE(LOG_TAG, "Failed to get WakeNet handle for model: %s", WAKENET_MODEL_NAME);
+        ESP_LOGE(LOG_TAG, "Failed to get WakeNet handle for model: %s", model_name);
+        esp_srmodel_deinit(sr_models);
+        sr_models = NULL;
         return -1;
     }
 
     // Create model instance
-    model_data = wakenet->create(WAKENET_MODEL_NAME, DET_MODE_90);
+    model_data = wakenet->create(model_name, DET_MODE_90);
     if (model_data == NULL) {
         ESP_LOGE(LOG_TAG, "Failed to create WakeNet model");
+        esp_srmodel_deinit(sr_models);
+        sr_models = NULL;
         return -1;
     }
 
@@ -78,12 +101,15 @@ int oai_init_wakeword(void) {
     ESP_LOGI(LOG_TAG, "WakeNet initialized: chunk_size=%d, sample_rate=%d",
              audio_chunksize, sample_rate);
 
-    // Allocate audio buffer
+    // Allocate audio buffer in PSRAM
     audio_buffer = (int16_t *)heap_caps_malloc(audio_chunksize * sizeof(int16_t),
                                                 MALLOC_CAP_SPIRAM);
     if (audio_buffer == NULL) {
         ESP_LOGE(LOG_TAG, "Failed to allocate audio buffer");
         wakenet->destroy(model_data);
+        model_data = NULL;
+        esp_srmodel_deinit(sr_models);
+        sr_models = NULL;
         return -1;
     }
 
@@ -94,10 +120,16 @@ int oai_init_wakeword(void) {
         ESP_LOGI(LOG_TAG, "Wake word %d: %s", i, word_name);
     }
 
+    wakeword_initialized = true;
     return 0;
 }
 
 void oai_wakeword_start(void) {
+    if (!wakeword_initialized) {
+        ESP_LOGW(LOG_TAG, "Wake word not initialized, skipping start");
+        return;
+    }
+
     if (wakeword_task_handle != NULL) {
         ESP_LOGW(LOG_TAG, "Wake word task already running");
         return;

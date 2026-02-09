@@ -19,6 +19,7 @@ extern "C" void app_main(void) {
   oai_init_display();
   oai_init_audio_capture();
   oai_init_audio_decoder();
+  oai_init_wakeword();
   oai_init_button();
   oai_wifi();
   oai_webrtc_loop(NULL);

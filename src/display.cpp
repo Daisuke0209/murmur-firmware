@@ -230,6 +230,9 @@ void oai_init_display(void) {
 void oai_display_set_state(DisplayState state) {
     const uint16_t *image;
     switch (state) {
+        case DISPLAY_STATE_LISTENING:
+            image = icon_loading;  // TODO: Add dedicated listening icon
+            break;
         case DISPLAY_STATE_INITIALIZING:
             image = icon_loading;
             break;

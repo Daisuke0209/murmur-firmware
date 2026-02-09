@@ -7,6 +7,7 @@
 
 #include "display.h"
 #include "main.h"
+#include "wakeword.h"
 
 #define USER_BUTTON GPIO_NUM_41
 #define DEBOUNCE_MS 300
@@ -149,21 +150,35 @@ void oai_init_button(void) {
 }
 
 void oai_webrtc_loop(void *user_data) {
-  // Initial connection
-  oai_webrtc();
-
-  // oai_webrtc() returns when webrtc_running becomes false (button press)
   while (1) {
-    // Wait for button press to reconnect
+    // Enter listening mode - wait for wake word or button press
+    oai_display_set_state(DISPLAY_STATE_LISTENING);
+    oai_wakeword_clear();
+    oai_wakeword_start();
+
+    ESP_LOGI(LOG_TAG, "Listening for wake word 'Hi ESP' or button press...");
     button_pressed = false;
-    ESP_LOGI(LOG_TAG, "Waiting for button press to reconnect...");
-    while (!button_pressed) {
+
+    // Wait for wake word detection or button press
+    while (!oai_wakeword_detected() && !button_pressed) {
       vTaskDelay(pdMS_TO_TICKS(100));
+    }
+
+    // Stop wake word detection
+    oai_wakeword_stop();
+
+    if (oai_wakeword_detected()) {
+      ESP_LOGI(LOG_TAG, "Wake word detected! Connecting to WebRTC...");
+    } else {
+      ESP_LOGI(LOG_TAG, "Button pressed! Connecting to WebRTC...");
     }
     button_pressed = false;
 
-    ESP_LOGI(LOG_TAG, "Reconnecting WebRTC...");
+    // Connect to WebRTC
     oai_display_set_state(DISPLAY_STATE_INITIALIZING);
     oai_webrtc();
+
+    // oai_webrtc() returns when disconnected (button press during connection)
+    ESP_LOGI(LOG_TAG, "WebRTC session ended, returning to listening mode...");
   }
 }
