@@ -1,9 +1,10 @@
 #pragma once
 
 typedef enum {
-    DISPLAY_STATE_INITIALIZING,  // Blue
-    DISPLAY_STATE_CONNECTED,     // Green
-    DISPLAY_STATE_DISCONNECTED,  // Red
+    DISPLAY_STATE_LISTENING,     // Waiting for wake word
+    DISPLAY_STATE_INITIALIZING,  // Connecting
+    DISPLAY_STATE_CONNECTED,     // Connected
+    DISPLAY_STATE_DISCONNECTED,  // Disconnected
 } DisplayState;
 
 void oai_init_display(void);
