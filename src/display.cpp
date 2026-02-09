@@ -11,9 +11,9 @@
 
 #if CONFIG_OPENAI_BOARD_M5_ATOMS3R
 
+#include "images/icon_listening.h"
 #include "images/icon_loading.h"
 #include "images/icon_connected.h"
-#include "images/icon_disconnected.h"
 
 // Backlight control via LP5562 (I2C)
 #define BL_I2C_PORT  I2C_NUM_0
@@ -231,16 +231,13 @@ void oai_display_set_state(DisplayState state) {
     const uint16_t *image;
     switch (state) {
         case DISPLAY_STATE_LISTENING:
-            image = icon_loading;  // TODO: Add dedicated listening icon
+            image = icon_listening;
             break;
         case DISPLAY_STATE_INITIALIZING:
             image = icon_loading;
             break;
         case DISPLAY_STATE_CONNECTED:
             image = icon_connected;
-            break;
-        case DISPLAY_STATE_DISCONNECTED:
-            image = icon_disconnected;
             break;
         default:
             image = icon_loading;
