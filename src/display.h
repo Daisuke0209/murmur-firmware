@@ -4,7 +4,6 @@ typedef enum {
     DISPLAY_STATE_LISTENING,     // Waiting for wake word
     DISPLAY_STATE_INITIALIZING,  // Connecting
     DISPLAY_STATE_CONNECTED,     // Connected
-    DISPLAY_STATE_DISCONNECTED,  // Disconnected
 } DisplayState;
 
 void oai_init_display(void);

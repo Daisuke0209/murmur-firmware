@@ -124,7 +124,6 @@ void oai_webrtc() {
   peer_connection = NULL;
 
   ESP_LOGI(LOG_TAG, "WebRTC connection stopped");
-  oai_display_set_state(DISPLAY_STATE_DISCONNECTED);
 }
 
 static void IRAM_ATTR button_isr_handler(void *arg) {
